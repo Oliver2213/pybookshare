@@ -2,6 +2,7 @@
 #http://developer.bookshare.org
 #Tested on Python2.7x32 running on Window 7 x64.
 #written by Alex Hall, mehgcap@gmail.com.
+#Forked and updated by Blake Oliver <oliver22213@me.com>
 #You may use, modify,redistribute, and so on.
 #If you use this wrapper in a project, be kind enough to credit me, but otherwise do what you want with the code.
 #Send me an email with any bug reports and I will do my best to fix them.
@@ -91,6 +92,7 @@ class Book(object):
 
  def getText(self, tag, data=None, failure="unknown"):
   #set failure to "False" if you want to cast results to a bool
+  #otherwise, what you pass in as the failure arg gets passed back. By default this is "unknown"
   if data is None: data=self.data
   txt=data.findtext(tag)
   if txt is not None: return txt
