@@ -17,6 +17,7 @@ import re
 import urllib
 import urllib2
 import xml.etree.ElementTree as xml
+import os
 
 #global functions:
 
@@ -387,65 +388,84 @@ class BookshareApi(object):
  #now the search functions, each of which returns a ResultSet object which is initialized with the function's xml (gotten from request)
 
  def search_id(self, id, category=None, grade=None, page=1, limit=None, type=None, member=None):
-  #if found, returns the book with the specified ID, not a booklist
+  """Obtain a book by it's Bookshare id
+  if found, returns the book with the specified ID, not a booklist"""
   if type is None: type=self.book
   return self.parse(self.request([type, "id", id], category, grade, page, limit, member))
 
  def search_isbn(self, isbn, category=None, grade=None, page=1, limit=None, type=None, member=None):
-  #again, returns only a single book, if found
+  """Returns a book by it's unique ISBN
+  again, returns only a single book, if found"""
   if type is None: type=self.book
   return self.parse(self.request([type, "isbn", isbn], category, grade, page, limit, member))
 
  def search_title(self, title, category=None, grade=None, page=1, limit=None, type=None, member=None):
+  """Searches a book by it's title
+  returns a search results object"""
   if type is None: type=self.book
   return self.parse(self.request([type, "searchFTS/title", title], category, grade, page, limit, member))
 
  def search_author(self, author, category=None, grade=None, page=1, limit=None, type=None, member=None):
+  """Searches books by author name - this is different from byAuthor
+  returns a search results object"""
   if type is None: type=self.book
   return self.parse(self.request([type, "searchFTS/author", author], category, grade, page, limit, member))
 
  def search_title_author(self, txt, category=None, grade=None, page=1, limit=None, type=None, member=None):
+  """Search by title and author
+  returns a search result object"""
   if type is None: type=self.book
   return self.parse(self.request([type, "searchTA", txt], category, grade, page, limit, member))
 
  def search_since(self, date, category=None, grade=None, page=1, limit=None, type=None, member=None):
-  #date must be in the form of eight numbers: mmddyyyy
+  """Searches for books since a certain date.
+  Date must be in the form of eight numbers: mmddyyyy"""
   if type is None: type=self.book
   return self.parse(self.request([type+"/search/since", str(date)], category, grade, page, limit, member))
 
  def search_edition(self, id, category=None, grade=None, page=1, limit=None, type=None, member=None):
+  """Searches for a periodical edition
+  returns a search results object"""
   if type is None: type=self.periodical
   return self.parse(self.request([type+"/id", str(id)], category, grade, page, limit, member))
 
  def search(self, txt, category=None, grade=None, page=1, limit=None, type=None, member=None):
-  #full (author, title, book text) search
+  """full (author, title, book text) search
+  returns a search result object"""
   if type is None: type=self.book
   return self.parse(self.request([type, "searchFTS", txt], category, grade, page, limit, member))
 
 
  def getBooksBy(self, author, page=1, limit=None, member=None, category=None, grade=None):
-  #returns a list of books by the supplied author
+  """Gets a list of books by the supplied author
+  returns a search results object"""
+  
   return self.parse(self.request(["book/search/author", author], page=page, limit=limit, member=member))
 
  def getPopular(self, page=1, limit=None, member=None, grade=None):
-  #requests the most popular books on Bookshare
+  """requests the most popular books on Bookshare
+  returns a search results object (though technically this isn't a search)"""
   return self.parse(self.request(["book/popular"], page=page, limit=limit, member=member))
 
 
  def getLatest(self, page=1, limit=None, member=None, grade=None):
-  #requests the most popular books on Bookshare
+  """requests the latest books on Bookshare
+  returns a search results object"""
   return self.parse(self.request(["book/latest"], page=page, limit=limit, member=member))
 
  def getBooksInCategory(self, category, page=1, limit=None, member=None, grade=None):
-  #gets the books in the given category
+  """gets the books in the given category
+  You might want to run getCategoryList() to get valid categories, then (unless you passed false to the aforementioned function), you can find them in bs.categoryList (assuming you instantiated the api to bs)
+  returns a search results object"""
   return self.parse(self.request(["book/searchFTS/category", category], page=page, limit=limit, member=member))
 
  def getPeriodicals(self, page=None, limit=None, member=None):
-  #returns a list of all periodicals authorized for the current user; if unauthenticated, all periodicals are returned
+  """returns a list of all periodicals authorized for the current user; if unauthenticated, all periodicals are returned"""
   return self.parse(self.request(["periodical/list"], page=page, limit=limit, member=member))
 
  def getCategoryList(self, save=True):
-  #returns a full list of categories
+  """returns a full list of categories
+  Pass false to only return and not save to categoryList"""
   original=self.request(["reference/category/list/limit/250"], search=False)
   original=self.findErrors(original)
   #original=xml.parse(original)
@@ -456,9 +476,10 @@ class BookshareApi(object):
   if save: self.categoryList=categories
   return categories
 
- 
+
  def getGradeList(self, save=True):
-  #returns a full list of categories
+  """returns a full list of grade levels
+  Pass false to not save to gradeList"""
   original=self.request(["reference/grade/list/limit/250"], search=False)
   original=self.findErrors(original)
   #original=xml.parse(original)
@@ -470,7 +491,8 @@ class BookshareApi(object):
   return grades
 
  def getMemberList(self, save=True):
-  #for organizational accounts only. Returns a list of authorized members for the organization
+  """for organizational accounts only. Returns a list of authorized members for the organization
+  Pass False if you don't want the members list saved"""
   members=[]
   data=self.request(["user/members/list/for", self.username], limit=250, search=False, headers=self.password_header)
   data=self.findErrors(data)
@@ -487,8 +509,8 @@ class BookshareApi(object):
   return members
 
  def getPrefsList(self, data=None):
-  #if data is None, gets preferences from api, else parses them from data.
-  #useful for use with the setPref function
+  """if data is None, gets preferences from api, else parses them from data.
+  useful for use with the setPref function"""
   prefsList={}
   if data is None: prefs=self.request(["user/preferences/list/for", self.username], headers=self.password_header, search=False)
   else: prefs=data
@@ -505,12 +527,12 @@ class BookshareApi(object):
   return prefsList
 
  def setPref(self, num, val, member=None):
-  #sets the user preference specified by the "num" arg to the value of the "val" arg
+  """sets the user preference specified by the "num" arg to the value of the "val" arg"
   res=self.request(["user/preference", str(num), "set", str(val), "for", self.username], search=False, member=member, headers=self.password_header)
   return self.getPrefsList(res)
 
  def getUserInfo(self, data=None):
-  #if data is None, gets info from api, else parses from data.
+  """if data is None, gets info from api, else parses from data."
   infoList={}
   if data is None: info=self.request(["user/info/display/for", self.username], headers=self.password_header, search=False)
   else: info=data
@@ -533,6 +555,7 @@ class BookshareApi(object):
   id=book.id
   #replace characters in title that Windows won't accept
   title=re.sub(r'\\|:|"|\'|\||/|<|>', " ", book.title)
+  if destination is None: destination=self.defaultDownloadLocation
   forUser="for/"+self.username
   try: res=self.request(["download", forUser, "content", str(id), "version", str(format)], headers=self.password_header, search=False, member=member)
   except urllib2.HTTPError, e:
@@ -544,7 +567,7 @@ class BookshareApi(object):
   return True
 
  def findErrors(self, data):
-  #examines xml for bookshare errors and raises the first one it sees, if any
+  """examines xml for bookshare errors and raises the first one it sees, if any"""
   try: res=xml.parse(data)
   #ignore the next two errors, thrown if "data" is already parsed. There has to be a better way...
   except xml.ParseError: res=data
@@ -561,7 +584,7 @@ class BookshareApi(object):
   else: return res
 
  def getMetaData(self, book):
-  #returns a book object with all possible info about the given book, useful for specifics on a book in a search results list
+  """returns a book object with all possible info about the given book, useful for specifics on a book in a search results list"""
   if book.type==self.book:
    res=self.request([book.type, "id", str(book.id)], search=False)
   elif book.type==self.periodical:
@@ -572,7 +595,7 @@ class BookshareApi(object):
   else: return Periodical(data)
 
  def parse(self, data=None):
-  #parses the xml in "data" and fills the rest of the fields with the results
+  """parses the xml in "data" and fills the rest of the fields with the results"""
   res=xml.parse(data)
   root=res.getroot()
   error=root.find("status-code")
@@ -587,14 +610,14 @@ class BookshareApi(object):
   per=root.find("periodical/metadata")
   if per is not None: return Periodical(per)
   perSearch=root.find("periodical/list")
-  if perSearch is not None and int(perSearch.findtext("num-pages"))==0: raise ApiError(-1, message, data.url)
+  if perSearch is not None and int(perSearch.findtext("num-pages"))==0: raise ApiError(-1, message, data.url) # No results found, page=0 is a good indicator of this. Error code -1 is specific to this api wrapper
   bookSearch=root.find("book/list")
   if bookSearch is not None and int(bookSearch.findtext("num-pages"))==0: raise ApiError(-1, message, data.url)
   if bookSearch is not None: return SearchResults(root, self.book, data.url)
   if perSearch is not None: return SearchResults(root, self.periodical, data.url)
 
 class ApiError(Exception):
- #for use with any bad requests from Bookshare's api
+ """This class is for use with any bad requests from Bookshare's api"""
 
  def __init__(self, number, message, url=""):
   self.number=number
