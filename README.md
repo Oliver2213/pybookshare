@@ -5,13 +5,15 @@ My [goodshare project](https://github.com/oliver2213/goodshare) also needs lots 
 To get started, create an instance of the BookshareApi class:
 
     import pybookshare
-    bs=BookshareApi(username, password, api_key, limit)
+    bs=BookshareApi(username, password, api_key, limit, defaultDownloadLocation, base)
 
 * username: the user's username, which is their email address.
 * password: the user's password, as plaintext (encryption to md5 is handled in the class).
 * password_ready: the encrypted form of the password, useful if you store the password in a configuration file and do not want to store it as plaintext
 * key: the api key of your application as issued by Bookshare. You can obtain a developer key at http://developer.bookshare.org and don't need a Bookshare account to do so, but you do need to create a developer account.
 * limit: how many books per page of search results you want. This cannot exceed 250; any value below 0 is set to 1, and above 250 is set to 250. Default is 100.
+* Default download location: When no location is passed to a download method, this location is used. If this isn't explicitly set, the default is the current working directory. 
+* Base: If the bookshare API base has changed, pass it in here. Otherwise the hardcoded one is used.
 
 ##Searching and downloading
 Now that we have a BookshareApi object, we can start searching and downloading. There are several types of searches you can perform, such as title, author, and so on. They all have a common format, so I will discuss that first:
@@ -53,7 +55,7 @@ The SearchResults object also holds any messages from Bookshare. If no error was
 
     try:
       res=bs.search_title("calculus")
-    except pybookshare.ApiError e:
+    except pybookshare.ApiError as e:
       print e.message
     else:
       print res.message
@@ -64,10 +66,11 @@ The SearchResults object will also provide information and methods for paging an
 * how many pages are in the set of results: res.pages
 * move to the next page: res.nextPage(). Note that this will overwrite current values, so if you are storing all the books in a result, make a deep copy of the res.results list before calling this. This method takes one api call to perform, and returns False if the page is out of range.
 * move to the previous page: res.prevPage(). This works the same as nextPage() but in the other direction.
-* move to a specific page: res.getPage(x). Again, this works like nextPage or prevPage, so deep copy the results if you want them, and remember that this uses one api call.
+* move to a specific page: res.getPage(x, True). Again, this works like nextPage or prevPage, so deep copy the results if you want them, and remember that this uses one api call. The "True" after the page number sets the getPage function to jump to that specific number, rather than just moving back / forward by that number of pages. nextPage and prevPage just do:
+    self.getPage(x) # the default jump value is false, this call will move you x pages backward or forward
 * type: this will always be equal to bs.book or bs.periodical, so you may check for equality with these constants if you need to.
 * resultCount: this is how many results are in the entire search, not just on the current page. Since this information is provided only in res.message and not explicitly by the api, it is possible for this functionality to break if the message format were ever changed by Bookshare (I extract it using a regular expression).
-* limit: how many books per page are retrieved. This cannot be changed and is there for information only.
+* limit: how many books per page are retrieved. This cannot be changed after the initial API instantiation, and is there for information only.
 * url: the url used to do the search again. This is used when calling paging functions and is not meant to be changed manually. If you have to change it, please reassign the object to the result of a new search.
 * len: calling len(res) will return len(res.results).
 * results: a list holding the actual results of the search. However, the SearchResults class is iterable, so you can simply iterate and index it instead of having to specify the results list.

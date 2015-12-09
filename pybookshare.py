@@ -277,7 +277,10 @@ class BookshareApi(object):
   password=None,
   password_ready=None,
   key=None,
-  limit=100):
+  limit=100
+  defaultDownloadLocation=os.getcwd(),
+  base=None
+):
   self.username=username
   self.password=password
   if self.password is not None and password_ready is None: self.password_ready=urllib.quote(hashlib.md5(self.password).hexdigest())
@@ -285,7 +288,10 @@ class BookshareApi(object):
   self.password_header={"X-password":self.password_ready}
   self.key=key
   self.key_str="?api_key="+str(self.key)
-  self.base="https://api.bookshare.org/"
+  if base is not none:
+   self.base=base
+  else: # Use the default API endpoint base
+   self.base="https://api.bookshare.org/"
   self.limit=limit #how many results per page
   if self.limit<0: self.limit=1
   elif self.limit>250: self.limit=250
@@ -345,9 +351,9 @@ class BookshareApi(object):
 
  #first, the master request function for asking for anything from the api:
  def request(self, args, category=None, grade=None, page=None, limit=None, member=None, search=True, data=None, headers={}):
-  #expects a list of args with identification for the api, such as
-  #["isbn", "0-0-0-...", "limit", 50]
-  #ORDER MATTERS!!
+  """expects a list of args with identification for the api, such as
+  ["isbn", "0-0-0-...", "limit", 50]
+  ORDER MATTERS!!"""
   if len(args)>2 and type(args[2]).__name__=="list": #extract from this sublist
    print "parsing args list"
    args2=[]
