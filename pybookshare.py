@@ -12,6 +12,22 @@
 #Tell me about it so I can fix it, but you may not take any legal action against me for it.
 #There, that's over. Now let's get started!
 
+"""Quick overview on how things work:
+You instantiate an instance of the Bookshare API class with your credentials and a few optional arguments (like a default download location, limit or results, etc)
+You then have access to methods to get the category list, grade list, search by author, title, title/author, full text, etc. Pretty much everything you can do on the site.
+For each search you perform, an instance of the search class is created. for example:
+res=bs.search_title_author("Harry potter")
+you can then iterate over the results by doing iether
+for b in res: print b
+or
+for b in res.results: print b
+It doesn't matter, the main object is iterable.
+This method holds true for all searches. You get a list.
+If I wanted the title of the first book, with the example above, I would do
+print (res[0].title)
+That's enough of a tutorial for now, read the README.
+
+"""
 import hashlib
 import re
 import urllib
@@ -22,7 +38,7 @@ import os
 #global functions:
 
 def request(request=None, url=None, data=None, headers=None):
- #pass either a single urllib2.Request object, or a url,data,headers set to use
+ """pass either a single urllib2.Request object, or a url,data,headers set to use"""
  if request is not None:
   return urllib2.urlopen(request)
  else:
@@ -63,8 +79,8 @@ class Book(object):
   return self.title+" by "+self.authorStr
 
  def parse(self, data=None):
-  #expects book info in xml format as given by the parse methods of BookshareApi or SearchResults
-  #basically, just give it an element starting at the "result" level of the xml
+  """expects book info in xml format as given by the parse methods of BookshareApi or SearchResults
+  basically, just give it an element starting at the "result" level of the xml"""
   if data is None: data=self.data
   #xml.dump(data) #prints data to stdout for debugging
   id=data.find("content-id")
@@ -92,15 +108,16 @@ class Book(object):
 
 
  def getText(self, tag, data=None, failure="unknown"):
-  #set failure to "False" if you want to cast results to a bool
-  #otherwise, what you pass in as the failure arg gets passed back. By default this is "unknown"
+  """set failure to "False" if you want to cast results to a bool
+  otherwise, what you pass in as the failure arg gets passed back. By default this is unknown
+  """
   if data is None: data=self.data
   txt=data.findtext(tag)
   if txt is not None: return txt
   else: return failure
 
  def makeListFrom(self, data, tag, l, s):
-  #searches data for tag and puts the text into the list l, then makes a pretty string s from the list
+  """searches data for tag and puts the text into the list l, then makes a pretty string s from the list"""
   found=data.getiterator(tag)
   for f in found:
    if f is not None: l.append(f.text)
@@ -127,6 +144,7 @@ class Periodical(Book):
   return str(self.title)
 
  def parse(self, data=None):
+
   super(Periodical, self).parse(data)
   self.edition=self.getText("edition")
   self.revision=self.getText("revision")
@@ -613,8 +631,8 @@ class BookshareApi(object):
   if perSearch is not None and int(perSearch.findtext("num-pages"))==0: raise ApiError(-1, message, data.url) # No results found, page=0 is a good indicator of this. Error code -1 is specific to this api wrapper
   bookSearch=root.find("book/list")
   if bookSearch is not None and int(bookSearch.findtext("num-pages"))==0: raise ApiError(-1, message, data.url)
-  if bookSearch is not None: return SearchResults(root, self.book, data.url)
   if perSearch is not None: return SearchResults(root, self.periodical, data.url)
+  if bookSearch is not None: return SearchResults(root, self.book, data.url)
 
 class ApiError(Exception):
  """This class is for use with any bad requests from Bookshare's api"""
