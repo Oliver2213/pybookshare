@@ -296,8 +296,8 @@ class BookshareApi(object):
   password=None,
   password_ready=None,
   key=None,
-  limit=100
-  defaultDownloadLocation=os.getcwd(),
+  limit=100,
+  defaultDownloadLocation=None,
   base=None
 ):
   self.username=username
@@ -314,6 +314,8 @@ class BookshareApi(object):
   self.limit=limit #how many results per page
   if self.limit<0: self.limit=1
   elif self.limit>250: self.limit=250
+  if defaultDownloadLocation is not None: self.defaultDownloadLocation=defaultDownloadLocation
+  else: self.defaultDownloadLocation=os.getcwd()
   self.downloadsRemaining=None
   self.categoryList=None
   self.gradeList=None
@@ -545,12 +547,12 @@ class BookshareApi(object):
   return prefsList
 
  def setPref(self, num, val, member=None):
-  """sets the user preference specified by the "num" arg to the value of the "val" arg"
+  """sets the user preference specified by the 'num' arg to the value of the 'val' arg"""
   res=self.request(["user/preference", str(num), "set", str(val), "for", self.username], search=False, member=member, headers=self.password_header)
   return self.getPrefsList(res)
 
  def getUserInfo(self, data=None):
-  """if data is None, gets info from api, else parses from data."
+  """if data is None, gets info from api, else parses from data."""
   infoList={}
   if data is None: info=self.request(["user/info/display/for", self.username], headers=self.password_header, search=False)
   else: info=data
